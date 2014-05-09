@@ -34,7 +34,8 @@ namespace FormatVariableDefine
                 string part1 = "";
                 string part2 = "";
                 string part3 = "";
-                int nPreSpace = Split3Part(line, ref part1, ref part2, ref part3);
+                string part4 = "";  // 增加注释部分
+                int nPreSpace = Split4Part(line, ref part1, ref part2, ref part3, ref part4);
                 //if (0 != nPreSpace)
                 {
                     if (dctPreSpace.ContainsKey(nPreSpace))
@@ -57,6 +58,7 @@ namespace FormatVariableDefine
                 lstString.Add(part1);
                 lstString.Add(part2);
                 lstString.Add(part3);
+                lstString.Add(part4);
             }
 
             if (0 != nMaxLenPart1)
@@ -86,6 +88,10 @@ namespace FormatVariableDefine
             string strPreSpace = "";
             for (int i = 0; i < nPreSpaceLen; i++)
                 strPreSpace += ' ';
+
+            // 将最前面的空格转为\t符号
+            strPreSpace = strPreSpace.Replace("    ", "\t");
+
             int j = 0;
             for (int i = 0; i < nRow; i++)
             {
@@ -107,8 +113,9 @@ namespace FormatVariableDefine
                 }
 
                 string part3 = lstString[j++];
+                string part4 = lstString[j++];
 
-                string outstr = String.Concat(strPreSpace, part1, part2, part3);
+                string outstr = String.Concat(strPreSpace, part1, part2, part3, part4);
                 outstr = outstr.TrimEnd();
                 outstr += "\r\n";
                 outCode.Append(outstr);
@@ -135,16 +142,34 @@ namespace FormatVariableDefine
             return alignHeaderMaxPos;
         }
 
-        private static int Split3Part(string line, ref string part1, ref string part2, ref string part3)
+        private static int Split4Part(string line, ref string part1, ref string part2, ref string part3, ref string part4)
         {
             int nPreSpaceNum = line.Length - line.TrimStart().Length;
             bool bHaveSemicolon = false;
             line = line.Trim();
             if (0 == line.Length)
             {
-                part3 = part2 = part1 = "";
+                part4 = part3 = part2 = part1 = "";
                 return 0;
             }
+
+            // 向前查找注释符号
+            int nPosSemicolon = line.LastIndexOf(';');
+            int nPosNote1     = line.LastIndexOf("//");
+            int nPosNote2     = line.LastIndexOf("/*");
+            if ((-1 != nPosNote1) && (-1 != nPosSemicolon ? nPosSemicolon < nPosNote1 : true))
+            {
+                part4 = line.Substring(nPosNote1);
+                line = line.Substring(0, nPosNote1);
+                line = line.Trim();
+            }
+            else if ((-1 != nPosNote2) && (-1 != nPosSemicolon ? nPosSemicolon < nPosNote2 : true))
+            {
+                part4 = line.Substring(nPosNote2);
+                line = line.Substring(0, nPosNote2);
+                line = line.Trim();
+            }
+
             if (line[line.Length-1] == ';')
             {
                 bHaveSemicolon = true;
